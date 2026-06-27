@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # pis installer
-# Version: 0.2.1
+# Version: 0.3.0
 # Usage: curl -sL https://raw.githubusercontent.com/Githubwujinming/pis/main/install.sh | bash
 
 set -euo pipefail
 
 INSTALL_DIR="${PI_ENV_DIR:-$HOME/.pi}"
 BIN_DIR="${PI_ENV_BIN:-$HOME/.local/bin}"
-VERSION="0.2.1"
+VERSION="0.3.0"
 
 # Parse --no-indicator / --install-indicator
 INSTALL_INDICATOR=1

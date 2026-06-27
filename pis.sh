@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # pis — Multi pi environment manager
-# Version: 0.2.1
+# Version: 0.3.0
 # License: MIT
 # https://github.com/Githubwujinming/pis
 
 set -euo pipefail
 
-VERSION="0.2.1"
+VERSION="0.3.0"
 SWAP="${PI_ENV_DIR:-$HOME/.pi}"
 BIN="${PI_ENV_BIN:-$HOME/.local/bin}"
 
