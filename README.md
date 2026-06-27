@@ -1,4 +1,4 @@
-# pi-env
+# pis
 
 Multi-environment management tool for pi-coding-agent. Create, clone, import, export, and switch between independent pi-coding-agent environments.
 
@@ -8,11 +8,11 @@ Multi-environment management tool for pi-coding-agent. Create, clone, import, ex
 
 ```bash
 # One-liner install
-curl -sL https://raw.githubusercontent.com/Githubwujinming/pi-env/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/Githubwujinming/pis/main/install.sh | bash
 
 # Clone repo
-git clone https://github.com/Githubwujinming/pi-env.git
-cd pi-env
+git clone https://github.com/Githubwujinming/pis.git
+cd pis
 ./install.sh
 ```
 
@@ -20,53 +20,53 @@ cd pi-env
 
 ```bash
 # Create a blank environment
-pi-env create test
+pis create test
 
 # Launch it
 pi-test
 
 # Clone from the current environment
-pi-env create rpiv-test --clone current
+pis create rpiv-test --clone current
 
 # Create and set as default
-pi-env create work --use
+pis create work --use
 
 # Export package list
-pi-env export
+pis export
 
 # Import packages from a file
-pi-env import test pi-packages.txt
+pis import test pi-packages.txt
 
 # List installed packages in the current environment
-pi-env packages
-pi-env pkgs
+pis packages
+pis pkgs
 
-# Update pi-env to the latest version
-pi-env update
+# Update pis to the latest version
+pis update
 ```
 
 ## Recommended Packages
 
-A curated list of recommended pi packages is available in [`vibecoding_pkgs.txt`](vibecoding_pkgs.txt), including development tools, utilities, and the [pi-env-indicator](https://github.com/Githubwujinming/pi-env) extension that shows your current environment in pi's status bar.
+A curated list of recommended pi packages is available in [`vibecoding_pkgs.txt`](vibecoding_pkgs.txt), including development tools, utilities, and the [pis-indicator](https://github.com/Githubwujinming/pis) extension that shows your current environment in pi's status bar.
 
 To create a new environment and install all recommended packages in one go:
 
 ```bash
-pi-env create vibe --use --import vibecoding_pkgs.txt
+pis create vibe --use --import vibecoding_pkgs.txt
 ```
 
 ## Use Cases
 
-pi-env lets you create isolated pi environments for different workflows, avoiding package bloat and conflicts in a single pi installation.
+pis lets you create isolated pi environments for different workflows, avoiding package bloat and conflicts in a single pi installation.
 
 ### 🧑‍💻 Vibecoding / Programming
 
 Create a dedicated coding environment packed with development tools:
 
 ```bash
-pi-env create vibe --clone current --use
+pis create vibe --clone current --use
 # Then install coding packages
-pi-env import vibe vibecoding_pkgs.txt
+pis import vibe vibecoding_pkgs.txt
 ```
 
 This environment can include: `pi-subagent`, `rpiv-workflow`, `rpiv-todo`, `pi-lens`, `pi-shazam`, `pi-agent-browser-native`, and other development-focused packages.
@@ -76,7 +76,7 @@ This environment can include: `pi-subagent`, `rpiv-workflow`, `rpiv-todo`, `pi-l
 Create a lightweight environment for daily tasks, research, and web browsing:
 
 ```bash
-pi-env create general --use
+pis create general --use
 pi install npm:pi-btw
 pi install npm:web-tool
 # ... install only what you need
@@ -93,16 +93,16 @@ Installing every package into a single pi environment can lead to:
 - Harder debugging when something breaks
 - Difficulty reproducing a setup on another machine
 
-With pi-env, each scenario gets its own `~/.pi/agent-<name>/` directory — completely isolated settings, packages, sessions, and auth.
+With pis, each scenario gets its own `~/.pi/agent-<name>/` directory — completely isolated settings, packages, sessions, and auth.
 
-## pi-env-indicator
+## pis-indicator
 
 A pi extension that shows the currently active pi environment in the TUI status bar.
 
 ### Install
 
 ```bash
-pi install npm:@wjm/pi-env-indicator
+pi install npm:@wjm/pis-indicator
 ```
 
 After installation, reload pi (`/reload`) — the status bar will show `pi: <name>`.
@@ -154,8 +154,8 @@ If you use [pi-powerline-footer](https://github.com/nicobailon/pi-powerline-foot
 | `list` | List all environments |
 | `status` | Show current status |
 | `packages` / `pkgs` [name] | List installed packages in an environment |
-| `update` | Update pi-env to the latest version |
-| `uninstall` | Remove pi-env and restore single-directory mode |
+| `update` | Update pis to the latest version |
+| `uninstall` | Remove pis and restore single-directory mode |
 
 ## How It Works
 
@@ -163,7 +163,7 @@ Each environment corresponds to a separate config directory `~/.pi/agent-<name>/
 
 - The `pi` command reads `~/.pi/agent/` — a symlink pointing to the current environment
 - The `pi-<name>` command launches a specific environment via `PI_CODING_AGENT_DIR`
-- `pi-env use <name>` switches the symlink to change the default `pi` target
+- `pis use <name>` switches the symlink to change the default `pi` target
 
 ## Environment Variables
 
@@ -177,13 +177,13 @@ Each environment corresponds to a separate config directory `~/.pi/agent-<name>/
 | Dependency | Required | Used By | Notes |
 |------------|----------|---------|-------|
 | **pi-coding-agent** | Yes | All commands | The tool being managed. Installer checks and aborts if missing. |
-| **Node.js** (`node`) | Yes | `pi-env export` | Reads `settings.json`. pi itself requires Node.js, so it's typically already available. |
+| **Node.js** (`node`) | Yes | `pis export` | Reads `settings.json`. pi itself requires Node.js, so it's typically already available. |
 | **Perl** | macOS only | `abs_path()` fallback | Pre-installed on macOS. Linux uses `readlink -f` instead. |
 | **curl** or **wget** | Remote install | `install.sh` | At least one is needed for the one-liner install method. |
 
 ## Cross-Platform
 
-pi-env works on **macOS** and **Linux**. It includes built-in compatibility shims for platform differences:
+pis works on **macOS** and **Linux**. It includes built-in compatibility shims for platform differences:
 
 | Difference | Fallback |
 |------------|----------|

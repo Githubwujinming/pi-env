@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# pi-env — Multi pi environment manager
+# pis — Multi pi environment manager
 # Version: 0.2.0
 # License: MIT
-# https://github.com/Githubwujinming/pi-env
+# https://github.com/Githubwujinming/pis
 
 set -euo pipefail
 
@@ -51,7 +51,7 @@ cmd_list() {
 cmd_create() {
 	local name="$2"
 	[ -z "$name" ] && {
-		echo "Usage: pi-env create <name> [--clone <source>] [--use] [--import <file>]"
+		echo "Usage: pis create <name> [--clone <source>] [--use] [--import <file>]"
 		exit 1
 	}
 	[ -d "$SWAP/agent-$name" ] && {
@@ -140,7 +140,7 @@ cmd_create() {
 cmd_delete() {
 	local name="$2"
 	[ -z "$name" ] && {
-		echo "Usage: pi-env delete <name>"
+		echo "Usage: pis delete <name>"
 		exit 1
 	}
 	[ ! -d "$SWAP/agent-$name" ] && {
@@ -161,7 +161,7 @@ cmd_delete() {
 cmd_use() {
 	local name="$2"
 	[ -z "$name" ] && {
-		echo "Usage: pi-env use <name>"
+		echo "Usage: pis use <name>"
 		exit 1
 	}
 	[ ! -d "$SWAP/agent-$name" ] && {
@@ -169,7 +169,7 @@ cmd_use() {
 		exit 1
 	}
 
-	# If agent is a real directory (legacy state before pi-env), convert it
+	# If agent is a real directory (legacy state before pis), convert it
 	if [ -d "$SWAP/agent" ] && [ ! -L "$SWAP/agent" ]; then
 		echo "  Converting existing pi config to environment: legacy"
 		mv "$SWAP/agent" "$SWAP/agent-legacy"
@@ -208,7 +208,7 @@ cmd_export() {
 cmd_import() {
 	local name="$2" infile="$3" envdir
 	[ -z "$name" ] && {
-		echo "Usage: pi-env import <name> [file]"
+		echo "Usage: pis import <name> [file]"
 		exit 1
 	}
 	[ -z "$infile" ] && infile="pi-packages-${name}.txt"
@@ -269,7 +269,7 @@ cmd_status() {
 
 cmd_uninstall() {
 	local answer
-	echo "This will remove pi-env and restore pi to normal single-directory mode."
+	echo "This will remove pis and restore pi to normal single-directory mode."
 	echo "Pi environments under $SWAP/agent-* will be kept."
 	read -r -p "Continue? [y/N] " answer
 	case "$answer" in
@@ -291,39 +291,39 @@ cmd_uninstall() {
 		fi
 	fi
 
-	# Remove pi-env files
-	rm -f "$SWAP/pi-env.sh"
-	echo "  Removed $SWAP/pi-env.sh"
-	rm -f "$BIN/pi-env"
-	echo "  Removed $BIN/pi-env"
+	# Remove pis files
+	rm -f "$SWAP/pis.sh"
+	echo "  Removed $SWAP/pis.sh"
+	rm -f "$BIN/pis"
+	echo "  Removed $BIN/pis"
 
 	echo ""
-	echo "pi-env uninstalled. pi continues to use $SWAP/agent as normal."
+	echo "pis uninstalled. pi continues to use $SWAP/agent as normal."
 	echo "To clean up leftover environments, remove $SWAP/agent-* directories manually."
 }
 
 cmd_update() {
-	echo "Updating pi-env..."
+	echo "Updating pis..."
 
-	local repo="Githubwujinming/pi-env"
-	local url="https://raw.githubusercontent.com/$repo/main/pi-env.sh"
+	local repo="Githubwujinming/pis"
+	local url="https://raw.githubusercontent.com/$repo/main/pis.sh"
 
 	if command -v curl >/dev/null 2>&1; then
-		curl -sL "$url" -o "$SWAP/pi-env.sh"
+		curl -sL "$url" -o "$SWAP/pis.sh"
 	elif command -v wget >/dev/null 2>&1; then
-		wget -q "$url" -O "$SWAP/pi-env.sh"
+		wget -q "$url" -O "$SWAP/pis.sh"
 	else
 		echo "Error: curl or wget is required"
 		exit 1
 	fi
 
-	chmod +x "$SWAP/pi-env.sh"
-	ln -sf "$SWAP/pi-env.sh" "$BIN/pi-env"
+	chmod +x "$SWAP/pis.sh"
+	ln -sf "$SWAP/pis.sh" "$BIN/pis"
 
 	local new_ver
-	new_ver=$(grep '^VERSION=' "$SWAP/pi-env.sh" | cut -d'=' -f2 | tr -d '"')
+	new_ver=$(grep '^VERSION=' "$SWAP/pis.sh" | cut -d'=' -f2 | tr -d '"')
 	echo "  Updated to v$new_ver"
-	echo "  Run 'pi-env help' to get started"
+	echo "  Run 'pis help' to get started"
 }
 
 cmd_packages() {
@@ -356,9 +356,9 @@ console.log('Total: ' + pkgs.length + ' packages');
 }
 
 cmd_help() {
-	echo "pi-env v$VERSION — Multi pi environment manager"
+	echo "pis v$VERSION — Multi pi environment manager"
 	echo ""
-	echo "Usage: pi-env <command> [options]"
+	echo "Usage: pis <command> [options]"
 	echo ""
 	echo "Commands:"
 	echo "  create <name>                  Create a blank environment"
@@ -372,18 +372,18 @@ cmd_help() {
 	echo "  list                           List all environments"
 	echo "  status                         Show current status"
 	echo "  packages [name]                List installed packages in an environment"
-	echo "  uninstall                      Remove pi-env and restore single-directory mode"
-	echo "  update                         Update pi-env to the latest version"
+	echo "  uninstall                      Remove pis and restore single-directory mode"
+	echo "  update                         Update pis to the latest version"
 	echo "  --version, -V                  Show version"
 	echo "  help                           Show this help"
 	echo ""
 	echo "Examples:"
-	echo "  pi-env create test                           Create a blank environment"
-	echo "  pi-env create test --use --import pkgs.txt   Create + default + import"
-	echo "  pi-env create rpiv --clone default           Clone from default"
-	echo "  pi-env export                                Export current package list"
-	echo "  pi-env import rpiv pkgs.txt                  Import packages to rpiv"
-	echo "  pi-env list                                  List all environments"
+	echo "  pis create test                           Create a blank environment"
+	echo "  pis create test --use --import pkgs.txt   Create + default + import"
+	echo "  pis create rpiv --clone default           Clone from default"
+	echo "  pis export                                Export current package list"
+	echo "  pis import rpiv pkgs.txt                  Import packages to rpiv"
+	echo "  pis list                                  List all environments"
 }
 
 # ============================================================
@@ -401,6 +401,6 @@ status | st) cmd_status "$@" ;;
 uninstall) cmd_uninstall "$@" ;;
 update) cmd_update "$@" ;;
 packages | pkgs) cmd_packages "$@" ;;
---version | -V) echo "pi-env v$VERSION" ;;
+--version | -V) echo "pis v$VERSION" ;;
 -h | --help | help | *) cmd_help ;;
 esac

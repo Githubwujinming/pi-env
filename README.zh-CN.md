@@ -1,4 +1,4 @@
-# pi-env
+# pis
 
 多 pi 环境管理工具。创建、克隆、导入导出、切换多个独立的 pi-coding-agent 环境。
 
@@ -6,11 +6,11 @@
 
 ```bash
 # 方式一：一键安装
-curl -sL https://raw.githubusercontent.com/Githubwujinming/pi-env/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/Githubwujinming/pis/main/install.sh | bash
 
 # 方式二：从仓库安装
-git clone https://github.com/Githubwujinming/pi-env.git
-cd pi-env
+git clone https://github.com/Githubwujinming/pis.git
+cd pis
 ./install.sh
 ```
 
@@ -18,53 +18,53 @@ cd pi-env
 
 ```bash
 # 创建一个空白环境
-pi-env create test
+pis create test
 
 # 启动它
 pi-test
 
 # 从当前环境克隆一份
-pi-env create rpiv-test --clone current
+pis create rpiv-test --clone current
 
 # 创建并设为默认
-pi-env create work --use
+pis create work --use
 
 # 导出包列表
-pi-env export
+pis export
 
 # 从文件导入包
-pi-env import test pi-packages.txt
+pis import test pi-packages.txt
 
 # 列出当前环境已安装的包
-pi-env packages
-pi-env pkgs
+pis packages
+pis pkgs
 
-# 更新 pi-env 到最新版本
-pi-env update
+# 更新 pis 到最新版本
+pis update
 ```
 
 ## 推荐包
 
-推荐安装包列表见 [`vibecoding_pkgs.txt`](vibecoding_pkgs.txt)，包含开发工具、实用工具以及 [pi-env-indicator](https://github.com/Githubwujinming/pi-env) 扩展（在状态栏显示当前环境）。
+推荐安装包列表见 [`vibecoding_pkgs.txt`](vibecoding_pkgs.txt)，包含开发工具、实用工具以及 [pis-indicator](https://github.com/Githubwujinming/pis) 扩展（在状态栏显示当前环境）。
 
 一行命令创建新环境并安装全部推荐包：
 
 ```bash
-pi-env create vibe --use --import vibecoding_pkgs.txt
+pis create vibe --use --import vibecoding_pkgs.txt
 ```
 
 ## 使用场景
 
-pi-env 让你为不同工作流创建独立的 pi 环境，避免单个 pi 安装过多包导致管理困难和冲突。
+pis 让你为不同工作流创建独立的 pi 环境，避免单个 pi 安装过多包导致管理困难和冲突。
 
 ### 🧑‍💻 编程开发
 
 创建专用于编码的环境，安装开发工具套件：
 
 ```bash
-pi-env create vibe --clone current --use
+pis create vibe --clone current --use
 # 然后安装编程相关包
-pi-env import vibe vibecoding_pkgs.txt
+pis import vibe vibecoding_pkgs.txt
 ```
 
 这类环境可包含：`pi-subagent`、`rpiv-workflow`、`rpiv-todo`、`pi-lens`、`pi-shazam`、`pi-agent-browser-native` 等开发工具包。
@@ -74,7 +74,7 @@ pi-env import vibe vibecoding_pkgs.txt
 创建轻量级环境用于日常办公和研究：
 
 ```bash
-pi-env create general --use
+pis create general --use
 pi install npm:pi-btw
 pi install npm:web-tool
 # ... 只装需要的包
@@ -91,16 +91,16 @@ pi install npm:web-tool
 - 出问题时难以排查
 - 难以在其他机器上复现同样的配置
 
-使用 pi-env，每个场景拥有独立的 `~/.pi/agent-<name>/` 目录 — 配置、包、会话、认证完全隔离。
+使用 pis，每个场景拥有独立的 `~/.pi/agent-<name>/` 目录 — 配置、包、会话、认证完全隔离。
 
-## pi-env-indicator
+## pis-indicator
 
 在 pi TUI 状态栏中显示当前 pi 环境的扩展。
 
 ### 安装
 
 ```bash
-pi install npm:@wjm/pi-env-indicator
+pi install npm:@wjm/pis-indicator
 ```
 
 安装后重新加载 pi（`/reload`），状态栏将显示 `pi: <环境名称>`。
@@ -152,8 +152,8 @@ pi install npm:@wjm/pi-env-indicator
 | `list` | 列出所有环境 |
 | `status` | 查看当前状态 |
 | `packages` / `pkgs` [名称] | 列出环境中已安装的包 |
-| `update` | 更新 pi-env 到最新版本 |
-| `uninstall` | 卸载 pi-env，恢复单目录模式 |
+| `update` | 更新 pis 到最新版本 |
+| `uninstall` | 卸载 pis，恢复单目录模式 |
 
 ## 环境管理
 
@@ -161,7 +161,7 @@ pi install npm:@wjm/pi-env-indicator
 
 - `pi` 命令默认读取 `~/.pi/agent/`（软链指向当前环境）
 - `pi-<名称>` 命令通过 `PI_CODING_AGENT_DIR` 直接启动指定环境
-- `pi-env use <名称>` 切换软链指向，改变 `pi` 的默认环境
+- `pis use <名称>` 切换软链指向，改变 `pi` 的默认环境
 
 ## 环境变量
 
@@ -175,7 +175,7 @@ pi install npm:@wjm/pi-env-indicator
 | 依赖 | 必须 | 用于 | 备注 |
 |------|------|------|------|
 | **pi-coding-agent** | 是 | 所有命令 | 被管理的目标工具。安装脚本会检测，不存在则报错退出。 |
-| **Node.js** (`node`) | 是 | `pi-env export` | 解析 `settings.json`。pi 本身就需要 Node.js，通常已具备。 |
+| **Node.js** (`node`) | 是 | `pis export` | 解析 `settings.json`。pi 本身就需要 Node.js，通常已具备。 |
 | **Perl** | 仅 macOS | `abs_path()` 回退实现 | macOS 预装。Linux 直接使用 `readlink -f`。 |
 | **curl** 或 **wget** | 远程安装 | `install.sh` | 一键安装方式至少需要其一。 |
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# pi-env installer
+# pis installer
 # Version: 0.2.0
-# Usage: curl -sL https://raw.githubusercontent.com/Githubwujinming/pi-env/main/install.sh | bash
+# Usage: curl -sL https://raw.githubusercontent.com/Githubwujinming/pis/main/install.sh | bash
 
 set -euo pipefail
 
@@ -23,24 +23,24 @@ fi
 # Create directories
 mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
-# Deploy pi-env.sh
-SCRIPT_SRC="$(cd "$(dirname "$0")" && pwd)/pi-env.sh"
+# Deploy pis.sh
+SCRIPT_SRC="$(cd "$(dirname "$0")" && pwd)/pis.sh"
 if [ -f "$SCRIPT_SRC" ]; then
-	cp "$SCRIPT_SRC" "$INSTALL_DIR/pi-env.sh"
+	cp "$SCRIPT_SRC" "$INSTALL_DIR/pis.sh"
 else
-	echo "Downloading pi-env.sh..."
+	echo "Downloading pis.sh..."
 	if command -v curl >/dev/null 2>&1; then
-		curl -sL "https://raw.githubusercontent.com/Githubwujinming/pi-env/main/pi-env.sh" -o "$INSTALL_DIR/pi-env.sh"
+		curl -sL "https://raw.githubusercontent.com/Githubwujinming/pis/main/pis.sh" -o "$INSTALL_DIR/pis.sh"
 	elif command -v wget >/dev/null 2>&1; then
-		wget -q "https://raw.githubusercontent.com/Githubwujinming/pi-env/main/pi-env.sh" -O "$INSTALL_DIR/pi-env.sh"
+		wget -q "https://raw.githubusercontent.com/Githubwujinming/pis/main/pis.sh" -O "$INSTALL_DIR/pis.sh"
 	else
 		echo "Error: curl or wget is required"
 		exit 1
 	fi
 fi
 
-chmod +x "$INSTALL_DIR/pi-env.sh"
-ln -sf "$INSTALL_DIR/pi-env.sh" "$BIN_DIR/pi-env"
+chmod +x "$INSTALL_DIR/pis.sh"
+ln -sf "$INSTALL_DIR/pis.sh" "$BIN_DIR/pis"
 
 # If ~/.pi/agent is a real directory (not a symlink), convert it to first environment
 if [ -d "$INSTALL_DIR/agent" ] && [ ! -L "$INSTALL_DIR/agent" ]; then
@@ -66,11 +66,11 @@ else
 	echo "  Adding $BIN_DIR to $rc ..."
 	{
 		echo ""
-		echo "# pi-env"
+		echo "# pis"
 		echo "export PATH=\"\$PATH:$BIN_DIR\""
 	} >>"$rc"
 	echo "  → Please run: source $rc"
 fi
 
-echo "pi-env v$VERSION installed successfully"
-echo "Run 'pi-env help' to get started"
+echo "pis v$VERSION installed successfully"
+echo "Run 'pis help' to get started"
