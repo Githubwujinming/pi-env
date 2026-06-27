@@ -159,11 +159,11 @@ fi
 # Install pis-indicator by default
 if [ "$INSTALL_INDICATOR" = "1" ]; then
 	echo "Installing pis-indicator..."
-	if PI_CODING_AGENT_DIR="$INSTALL_DIR/agent" pi install github:Githubwujinming/pis-indicator 2>&1; then
+	if PI_CODING_AGENT_DIR="$INSTALL_DIR/agent" pi install git:github.com/Githubwujinming/pis-indicator 2>&1; then
 		echo "  → pis-indicator installed"
 	else
 		echo "  Warning: pis-indicator installation failed"
-		echo "  You can install later with: pi install github:Githubwujinming/pis-indicator"
+		echo "  You can install later with: pi install git:github.com/Githubwujinming/pis-indicator"
 	fi
 fi
 

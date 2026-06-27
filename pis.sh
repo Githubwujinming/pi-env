@@ -132,7 +132,7 @@ fs.renameSync(tmp, path);
 	# Install pis-indicator by default (independent of --import)
 	if [ "$install_indicator" = "1" ]; then
 		echo "  Installing pis-indicator..."
-		if PI_CODING_AGENT_DIR="$SWAP/agent-$name" pi install github:Githubwujinming/pis-indicator 2>&1; then
+		if PI_CODING_AGENT_DIR="$SWAP/agent-$name" pi install git:github.com/Githubwujinming/pis-indicator 2>&1; then
 			echo "  → pis-indicator installed"
 		else
 			echo "  Warning: pis-indicator installation failed"
