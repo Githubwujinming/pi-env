@@ -443,7 +443,8 @@ cmd_packages() {
 		cmd_packages_update "$@"
 		;;
 	*)
-		# Existing list behavior — unchanged
+		# Unknown flags show usage, otherwise list behavior
+		[[ "${2:-}" =~ ^- ]] && { echo "Usage: pis pkgs [env] | install <pkg> [env] | remove <pkg> [env] | update [env]"; exit 1; }
 		local name="${2:-current}" envdir
 		envdir=$(resolve_env_dir "$name")
 		[ ! -f "$envdir/settings.json" ] && {
