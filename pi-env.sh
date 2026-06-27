@@ -1,0 +1,284 @@
+#!/usr/bin/env bash
+# pi-env — Multi pi environment manager
+# Version: 0.0.1
+# License: MIT
+# https://github.com/Githubwujinming/pi-env
+
+set -euo pipefail
+
+VERSION="0.0.1"
+SWAP="${PI_ENV_DIR:-$HOME/.pi}"
+BIN="${PI_ENV_BIN:-$HOME/.local/bin}"
+
+# ============================================================
+# Cross-platform compatibility helpers
+# ============================================================
+
+# macOS readlink lacks -f, use perl instead
+abs_path() {
+	case "$(uname -s)" in
+	Darwin) perl -MCwd -e 'print Cwd::abs_path(shift)' "$1" 2>/dev/null ;;
+	*) readlink -f "$1" 2>/dev/null ;;
+	esac
+}
+
+# Cross-platform sed -i
+sed_i() {
+	case "$(uname -s)" in
+	Darwin) sed -i '' "$@" ;;
+	*) sed -i "$@" ;;
+	esac
+}
+
+# ============================================================
+# Command implementations
+# ============================================================
+
+cmd_list() {
+	echo "Available environments:"
+	for d in "$SWAP"/agent-*; do
+		[ -d "$d" ] || continue
+		name="${d##*agent-}"
+		cmd="$BIN/pi-$name"
+		linkto=$(readlink "$SWAP/agent" 2>/dev/null || true)
+		active=""
+		[ "$linkto" = "agent-$name" ] && active=" ← active"
+		[ -f "$cmd" ] && note=" (cmd: pi-$name)" || note=""
+		echo "  $name${active} $note"
+	done
+}
+
+cmd_create() {
+	local name="$2"
+	[ -z "$name" ] && {
+		echo "Usage: pi-env create <name> [--clone <source>] [--use] [--import <file>]"
+		exit 1
+	}
+	[ -d "$SWAP/agent-$name" ] && {
+		echo "  Environment '$name' already exists"
+		exit 1
+	}
+
+	local do_use=0 impfile="" clone_src=""
+	shift 2
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--use | -u) do_use=1 ;;
+		--clone)
+			clone_src="$2"
+			shift
+			;;
+		--import)
+			impfile="$2"
+			shift
+			;;
+		esac
+		shift
+	done
+
+	if [ -n "$clone_src" ]; then
+		if [ "$clone_src" = "current" ]; then
+			local realdir
+			realdir=$(abs_path "$SWAP/agent" 2>/dev/null || echo "$SWAP/agent")
+			[ -d "$realdir" ] || {
+				echo "  No active environment"
+				exit 1
+			}
+			cp -a "$realdir" "$SWAP/agent-$name"
+		elif [ -d "$SWAP/agent-$clone_src" ]; then
+			cp -a "$SWAP/agent-$clone_src" "$SWAP/agent-$name"
+		else
+			echo "  Source environment '$clone_src' does not exist"
+			exit 1
+		fi
+		echo "  Cloned from '$clone_src': $name"
+	else
+		mkdir -p "$SWAP/agent-$name/bin"
+		if [ -d "$SWAP/tools" ]; then
+			for tool in "$SWAP/tools"/*; do
+				[ -f "$tool" ] && ln -s "../../tools/$(basename "$tool")" "$SWAP/agent-$name/bin/"
+			done
+		fi
+		echo "  Created blank environment: $name"
+	fi
+
+	cat >"$BIN/pi-$name" <<-SCRIPT
+		#!/usr/bin/env bash
+		export PI_CODING_AGENT_DIR="\$HOME/.pi/agent-$name"
+		exec pi "\$@"
+	SCRIPT
+	chmod +x "$BIN/pi-$name"
+	echo "  Command: pi-$name"
+
+	[ "$do_use" = "1" ] && ln -snf "agent-$name" "$SWAP/agent" && echo "  Set as default"
+
+	if [ -n "$impfile" ]; then
+		[ ! -f "$impfile" ] && {
+			echo "  File $impfile does not exist"
+			exit 1
+		}
+		echo "  Importing packages..."
+		while IFS= read -r pkg; do
+			[ -z "$pkg" ] && continue
+			echo "    $pkg"
+			PI_CODING_AGENT_DIR="$SWAP/agent-$name" pi install "$pkg" 2>/dev/null
+		done <"$impfile"
+		echo "  Import complete"
+	fi
+}
+
+cmd_delete() {
+	local name="$2"
+	[ -z "$name" ] && {
+		echo "Usage: pi-env delete <name>"
+		exit 1
+	}
+	[ ! -d "$SWAP/agent-$name" ] && {
+		echo "  Environment '$name' does not exist"
+		exit 1
+	}
+	local linkto
+	linkto=$(readlink "$SWAP/agent" 2>/dev/null || true)
+	[ "$linkto" = "agent-$name" ] && {
+		echo "  Cannot delete the active environment"
+		exit 1
+	}
+	rm -rf "$SWAP/agent-$name"
+	rm -f "$BIN/pi-$name"
+	echo "  Deleted: $name"
+}
+
+cmd_use() {
+	local name="$2"
+	[ -z "$name" ] && {
+		echo "Usage: pi-env use <name>"
+		exit 1
+	}
+	[ ! -d "$SWAP/agent-$name" ] && {
+		echo "  Environment '$name' does not exist"
+		exit 1
+	}
+	ln -snf "agent-$name" "$SWAP/agent"
+	echo "  Default pi environment set to: $name"
+}
+
+cmd_export() {
+	local name="${2:-default}" outfile="${3:-pi-packages-${2:-default}.txt}" envdir
+
+	if [ "$name" = "current" ]; then
+		envdir=$(abs_path "$SWAP/agent" 2>/dev/null)
+	elif [ "$name" = "default" ]; then
+		envdir="$SWAP/agent-default"
+	else
+		envdir="$SWAP/agent-$name"
+	fi
+	[ ! -f "$envdir/settings.json" ] && {
+		echo "  Environment '$name' has no settings.json"
+		exit 1
+	}
+
+	node -e "
+    const fs = require('fs');
+    const s = JSON.parse(fs.readFileSync('$envdir/settings.json', 'utf-8'));
+    (s.packages || []).forEach(p => console.log(p));
+  " >"$outfile"
+	local count
+	count=$(wc -l <"$outfile" | tr -d ' ')
+	echo "  Exported $count packages to $outfile"
+}
+
+cmd_import() {
+	local name="$2" infile="$3" envdir
+	[ -z "$name" ] && {
+		echo "Usage: pi-env import <name> [file]"
+		exit 1
+	}
+	[ -z "$infile" ] && infile="pi-packages-${name}.txt"
+	[ ! -f "$infile" ] && {
+		echo "  File $infile does not exist"
+		exit 1
+	}
+
+	if [ "$name" = "default" ]; then
+		envdir="$SWAP/agent-default"
+	else
+		envdir="$SWAP/agent-$name"
+	fi
+	[ ! -d "$envdir" ] && {
+		echo "  Environment '$name' does not exist"
+		exit 1
+	}
+
+	while IFS= read -r pkg; do
+		[ -z "$pkg" ] && continue
+		echo "    $pkg"
+		PI_CODING_AGENT_DIR="$envdir" pi install "$pkg" 2>/dev/null
+	done <"$infile"
+	echo "  Import complete"
+}
+
+cmd_status() {
+	echo "=== pi Environment Status ==="
+	local linkto
+	linkto=$(readlink "$SWAP/agent" 2>/dev/null || true)
+	if [ -n "$linkto" ]; then
+		echo "Current: agent → $linkto"
+	elif [ -d "$SWAP/agent" ]; then
+		echo "Current: agent (real directory, not symlink)"
+	fi
+	echo ""
+	echo "Saved environments:"
+	for d in "$SWAP"/agent-*; do
+		[ -d "$d" ] || continue
+		local name="${d##*agent-}"
+		local cmd="$BIN/pi-$name"
+		local active=""
+		[ "$linkto" = "agent-$name" ] && active=" ← active"
+		[ -f "$cmd" ] && note=" (cmd: pi-$name)" || note=""
+		echo "  $name${active} $note"
+	done
+}
+
+cmd_help() {
+	echo "pi-env v$VERSION — Multi pi environment manager"
+	echo ""
+	echo "Usage: pi-env <command> [options]"
+	echo ""
+	echo "Commands:"
+	echo "  create <name>                  Create a blank environment"
+	echo "  create <name> --clone <src>    Clone from an environment"
+	echo "  create <name> --use           Set as default on creation"
+	echo "  create <name> --import <file>  Import packages on creation"
+	echo "  delete <name>                  Delete an environment"
+	echo "  use <name>                     Set default pi environment"
+	echo "  export [name] [file]           Export package list"
+	echo "  import <name> [file]           Import packages from file"
+	echo "  list                           List all environments"
+	echo "  status                         Show current status"
+	echo "  --version, -V                  Show version"
+	echo "  help                           Show this help"
+	echo ""
+	echo "Examples:"
+	echo "  pi-env create test                           Create a blank environment"
+	echo "  pi-env create test --use --import pkgs.txt   Create + default + import"
+	echo "  pi-env create rpiv --clone default           Clone from default"
+	echo "  pi-env export                                Export current package list"
+	echo "  pi-env import rpiv pkgs.txt                  Import packages to rpiv"
+	echo "  pi-env list                                  List all environments"
+}
+
+# ============================================================
+# Main entry
+# ============================================================
+
+case "${1:-help}" in
+list | ls) cmd_list "$@" ;;
+create | new) cmd_create "$@" ;;
+delete | rm) cmd_delete "$@" ;;
+use) cmd_use "$@" ;;
+export) cmd_export "$@" ;;
+import) cmd_import "$@" ;;
+status | st) cmd_status "$@" ;;
+--version | -V) echo "pi-env v$VERSION" ;;
+-h | --help | help | *) cmd_help ;;
+esac
