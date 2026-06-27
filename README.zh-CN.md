@@ -34,6 +34,9 @@ pi-env export
 
 # 从文件导入包
 pi-env import test pi-packages.txt
+
+# 更新 pi-env 到最新版本
+pi-env update
 ```
 
 ## 推荐包
@@ -60,6 +63,8 @@ pi-env create vibe --use --import vibecoding_pkgs.txt
 | `import <名称> [文件]` | 从文件导入包到指定环境 |
 | `list` | 列出所有环境 |
 | `status` | 查看当前状态 |
+| `update` | 更新 pi-env 到最新版本 |
+| `uninstall` | 卸载 pi-env，恢复单目录模式 |
 
 ## 环境管理
 

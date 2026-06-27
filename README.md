@@ -36,6 +36,9 @@ pi-env export
 
 # Import packages from a file
 pi-env import test pi-packages.txt
+
+# Update pi-env to the latest version
+pi-env update
 ```
 
 ## Recommended Packages
@@ -62,6 +65,8 @@ pi-env create vibe --use --import vibecoding_pkgs.txt
 | `import <name> [file]` | Import packages from a file into an environment |
 | `list` | List all environments |
 | `status` | Show current status |
+| `update` | Update pi-env to the latest version |
+| `uninstall` | Remove pi-env and restore single-directory mode |
 
 ## How It Works
 
