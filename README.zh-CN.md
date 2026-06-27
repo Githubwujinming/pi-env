@@ -49,6 +49,46 @@ pi-env update
 pi-env create vibe --use --import vibecoding_pkgs.txt
 ```
 
+## 使用场景
+
+pi-env 让你为不同工作流创建独立的 pi 环境，避免单个 pi 安装过多包导致管理困难和冲突。
+
+### 🧑‍💻 编程开发
+
+创建专用于编码的环境，安装开发工具套件：
+
+```bash
+pi-env create vibe --clone current --use
+# 然后安装编程相关包
+pi-env import vibe vibecoding_pkgs.txt
+```
+
+这类环境可包含：`pi-subagent`、`rpiv-workflow`、`rpiv-todo`、`pi-lens`、`pi-shazam`、`pi-agent-browser-native` 等开发工具包。
+
+### 📋 办公 / 研究调研
+
+创建轻量级环境用于日常办公和研究：
+
+```bash
+pi-env create general --use
+pi install npm:pi-btw
+pi install npm:web-tool
+# ... 只装需要的包
+```
+
+这类环境只保留 `pi-btw`、`pi-powerline-footer`、`pi-llm-wiki`、`web-tool` 等基本工具。
+
+### 🧹 为什么要隔离？
+
+所有包装在一个 pi 环境里会导致：
+
+- 启动变慢 — pi 需要加载所有扩展和技能
+- 包之间命令冲突
+- 出问题时难以排查
+- 难以在其他机器上复现同样的配置
+
+使用 pi-env，每个场景拥有独立的 `~/.pi/agent-<name>/` 目录 — 配置、包、会话、认证完全隔离。
+
 ## 命令
 
 | 命令 | 说明 |

@@ -51,6 +51,46 @@ To create a new environment and install all recommended packages in one go:
 pi-env create vibe --use --import vibecoding_pkgs.txt
 ```
 
+## Use Cases
+
+pi-env lets you create isolated pi environments for different workflows, avoiding package bloat and conflicts in a single pi installation.
+
+### 🧑‍💻 Vibecoding / Programming
+
+Create a dedicated coding environment packed with development tools:
+
+```bash
+pi-env create vibe --clone current --use
+# Then install coding packages
+pi-env import vibe vibecoding_pkgs.txt
+```
+
+This environment can include: `pi-subagent`, `rpiv-workflow`, `rpiv-todo`, `pi-lens`, `pi-shazam`, `pi-agent-browser-native`, and other development-focused packages.
+
+### 📋 General / Office / Research
+
+Create a lightweight environment for daily tasks, research, and web browsing:
+
+```bash
+pi-env create general --use
+pi install npm:pi-btw
+pi install npm:web-tool
+# ... install only what you need
+```
+
+This environment keeps only essentials like `pi-btw`, `pi-powerline-footer`, `pi-llm-wiki`, `web-tool`, and browsing tools.
+
+### 🧹 Why isolate?
+
+Installing every package into a single pi environment can lead to:
+
+- Slower startup as pi loads all extensions and skills
+- Command conflicts between similar packages
+- Harder debugging when something breaks
+- Difficulty reproducing a setup on another machine
+
+With pi-env, each scenario gets its own `~/.pi/agent-<name>/` directory — completely isolated settings, packages, sessions, and auth.
+
 ## Commands
 
 | Command | Description |
