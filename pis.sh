@@ -412,7 +412,11 @@ cmd_uninstall() {
 }
 
 cmd_update() {
-	[[ "${2:-}" =~ ^- ]] && { echo "Usage: pis update"; exit 1; }
+	[[ "${2:-}" =~ ^- ]] && {
+		echo "Usage: pis update"
+		echo "Update pis to the latest version"
+		exit 1
+	}
 	echo "Updating pis..."
 
 	local repo="Githubwujinming/pis"
