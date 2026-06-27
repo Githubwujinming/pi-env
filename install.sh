@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # pis installer
-# Version: 0.2.0
+# Version: 0.2.1
 # Usage: curl -sL https://raw.githubusercontent.com/Githubwujinming/pis/main/install.sh | bash
 
 set -euo pipefail
 
 INSTALL_DIR="${PI_ENV_DIR:-$HOME/.pi}"
 BIN_DIR="${PI_ENV_BIN:-$HOME/.local/bin}"
-VERSION="0.2.0"
+VERSION="0.2.1"
 
 # Parse --no-indicator / --install-indicator
 INSTALL_INDICATOR=1
@@ -62,6 +62,77 @@ if [ -d "$INSTALL_DIR/agent" ] && [ ! -L "$INSTALL_DIR/agent" ]; then
 	mv "$INSTALL_DIR/agent" "$INSTALL_DIR/agent-default"
 	ln -snf "agent-default" "$INSTALL_DIR/agent"
 	echo "  → $INSTALL_DIR/agent now points to $INSTALL_DIR/agent-default"
+fi
+
+# ------------------------------------------------------------------
+# Ensure pnpm is available for pi's package management
+# ------------------------------------------------------------------
+if ! command -v pnpm >/dev/null 2>&1; then
+	echo ""
+	echo "pi requires pnpm for efficient package management across environments."
+	echo "pnpm shares package files globally, saving disk space."
+	read -r -p "Install pnpm now via 'npm install -g pnpm'? [Y/n] " yn
+	case "${yn:-Y}" in
+	[Nn]*)
+		echo "  pnpm not installed. pi will use npm as fallback."
+		echo "  Run 'npm install -g pnpm' later if you want to migrate."
+		;;
+	*)
+		echo "Installing pnpm..."
+		if npm install -g pnpm 2>&1; then
+			echo "  → pnpm v$(pnpm --version || true) installed"
+		else
+			echo "  Error: pnpm installation failed."
+			echo "  Please install pnpm manually: npm install -g pnpm"
+			echo "  Then re-run install.sh."
+			exit 1
+		fi
+		;;
+	esac
+fi
+
+# ------------------------------------------------------------------
+# Migrate existing agent-* environments to use pnpm
+# ------------------------------------------------------------------
+if command -v pnpm >/dev/null 2>&1; then
+	echo "Checking existing pi environments..."
+	for env_dir in "$INSTALL_DIR"/agent-*; do
+		[ -d "$env_dir" ] || continue
+		env_name="${env_dir#*/agent-}"
+		settings_file="$env_dir/settings.json"
+		[ -f "$settings_file" ] || continue
+
+		if grep -q '"npmCommand"' "$settings_file" 2>/dev/null; then
+			echo "  $env_name already has npmCommand configured (skipping)"
+			continue
+		fi
+
+		echo "  Migrating $env_name to pnpm..."
+		# Assumption: no concurrent pi processes are running during this write
+		if ! node -e "
+const fs = require('fs');
+const path = '$settings_file';
+let s = {};
+try { s = JSON.parse(fs.readFileSync(path, 'utf-8')); } catch (e) { process.exit(1); }
+s.npmCommand = ['pnpm'];
+const tmp = path + '.tmp';
+fs.writeFileSync(tmp, JSON.stringify(s, null, 2) + '\n');
+fs.renameSync(tmp, path);
+" 2>&1; then
+			echo "  Warning: could not set npmCommand for $env_name" >&2
+			continue
+		fi
+
+		# Delete old node_modules to force clean rebuild with pnpm
+		rm -rf "$env_dir/npm/node_modules"
+		echo "    Rebuilding packages with pnpm..."
+		if PI_CODING_AGENT_DIR="$env_dir" pi update --extensions 2>&1; then
+			echo "    → $env_name migrated to pnpm"
+		else
+			echo "    Warning: pi update --extensions failed for $env_name" >&2
+			echo "    settings.json already updated. Run manually: PI_CODING_AGENT_DIR=$env_dir pi update --extensions" >&2
+		fi
+	done
 fi
 
 # Auto-add to PATH

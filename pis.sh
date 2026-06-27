@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # pis — Multi pi environment manager
-# Version: 0.2.0
+# Version: 0.2.1
 # License: MIT
 # https://github.com/Githubwujinming/pis
 
 set -euo pipefail
 
-VERSION="0.2.0"
+VERSION="0.2.1"
 SWAP="${PI_ENV_DIR:-$HOME/.pi}"
 BIN="${PI_ENV_BIN:-$HOME/.local/bin}"
 
@@ -113,6 +113,21 @@ cmd_create() {
 	echo "  Command: pi-$name"
 
 	[ "$do_use" = "1" ] && ln -snf "agent-$name" "$SWAP/agent" && echo "  Set as default"
+
+	# Ensure pnpm is the default package manager for this environment
+	# Assumption: no concurrent pi processes are running during this write
+	if ! node -e "
+const fs = require('fs');
+const path = '$SWAP/agent-$name/settings.json';
+let s = {};
+try { s = JSON.parse(fs.readFileSync(path, 'utf-8')); } catch (e) {}
+s.npmCommand = ['pnpm'];
+const tmp = path + '.tmp';
+fs.writeFileSync(tmp, JSON.stringify(s, null, 2) + '\n');
+fs.renameSync(tmp, path);
+" 2>&1; then
+		echo "  Warning: could not set npmCommand for $name" >&2
+	fi
 
 	# Install pis-indicator by default (independent of --import)
 	if [ "$install_indicator" = "1" ]; then
