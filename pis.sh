@@ -329,6 +329,10 @@ cmd_rename() {
 		echo "Usage: pis rename <old-name> <new-name>"
 		exit 1
 	}
+	[[ "$old_name" =~ ^- ]] && {
+		echo "Usage: pis rename <old-name> <new-name>"
+		exit 1
+	}
 
 	# Validate names: only alphanumeric, underscore, hyphen
 	if ! echo "$old_name" | grep -qE '^[a-zA-Z0-9_-]+$' || ! echo "$new_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
@@ -408,6 +412,7 @@ cmd_uninstall() {
 }
 
 cmd_update() {
+	[[ "${2:-}" =~ ^- ]] && { echo "Usage: pis update"; exit 1; }
 	echo "Updating pis..."
 
 	local repo="Githubwujinming/pis"
@@ -444,7 +449,10 @@ cmd_packages() {
 		;;
 	*)
 		# Unknown flags show usage, otherwise list behavior
-		[[ "${2:-}" =~ ^- ]] && { echo "Usage: pis pkgs [env] | install <pkg> [env] | remove <pkg> [env] | update [env]"; exit 1; }
+		[[ "${2:-}" =~ ^- ]] && {
+			echo "Usage: pis pkgs [env] | install <pkg> [env] | remove <pkg> [env] | update [env]"
+			exit 1
+		}
 		local name="${2:-current}" envdir
 		envdir=$(resolve_env_dir "$name")
 		[ ! -f "$envdir/settings.json" ] && {
@@ -469,6 +477,10 @@ console.log('Total: ' + pkgs.length + ' packages');
 cmd_packages_install() {
 	local pkg="$3" name="${4:-current}"
 	[ -z "$pkg" ] && {
+		echo "Usage: pis pkgs install <pkg> [env|--all]"
+		exit 1
+	}
+	[[ "$pkg" =~ ^- ]] && {
 		echo "Usage: pis pkgs install <pkg> [env|--all]"
 		exit 1
 	}
@@ -514,6 +526,10 @@ cmd_packages_remove() {
 		echo "Usage: pis pkgs remove <pkg> [env|--all]"
 		exit 1
 	}
+	[[ "$pkg" =~ ^- ]] && {
+		echo "Usage: pis pkgs remove <pkg> [env|--all]"
+		exit 1
+	}
 
 	if [ "$name" = "--all" ]; then
 		echo "  Removing $pkg from all environments..."
@@ -552,6 +568,10 @@ cmd_packages_remove() {
 
 cmd_packages_update() {
 	local name="${3:-current}"
+	[ "$name" != "--all" ] && [[ "$name" =~ ^- ]] && {
+		echo "Usage: pis pkgs update [env|--all]"
+		exit 1
+	}
 
 	if [ "$name" = "--all" ]; then
 		echo "  Updating all environments..."
