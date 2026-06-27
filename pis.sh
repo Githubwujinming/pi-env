@@ -605,8 +605,9 @@ cmd_packages_update() {
 	echo "  Updating packages in $name..."
 	if PI_CODING_AGENT_DIR="$envdir" pi update --extensions 2>&1; then
 		echo "  → $name packages updated"
-		echo "  Note: updates respect semver ranges in package.json."
-		echo "  To upgrade beyond range: pi install <pkg>@latest"
+		echo "  Note: updates respect semver ranges (e.g. ^0.19.9 blocks 0.20.x)."
+		echo "  To check: pnpm outdated"
+		echo "  To force upgrade: pi install <pkg>@latest"
 	else
 		echo "  Warning: update failed for $name" >&2
 		exit 1
