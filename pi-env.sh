@@ -247,6 +247,41 @@ cmd_status() {
 	done
 }
 
+cmd_uninstall() {
+	local answer
+	echo "This will remove pi-env and restore pi to normal single-directory mode."
+	echo "Pi environments under $SWAP/agent-* will be kept."
+	read -r -p "Continue? [y/N] " answer
+	case "$answer" in
+	[Yy]|[Yy][Ee][Ss]) ;;
+	*)
+		echo "  Cancelled."
+		exit 0
+		;;
+	esac
+
+	# Restore agent symlink to real directory if possible
+	if [ -L "$SWAP/agent" ]; then
+		local target
+		target=$(readlink "$SWAP/agent")
+		if [ -d "$SWAP/$target" ]; then
+			rm "$SWAP/agent"
+			mv "$SWAP/$target" "$SWAP/agent"
+			echo "  Restored $SWAP/agent to real directory ($target)"
+		fi
+	fi
+
+	# Remove pi-env files
+	rm -f "$SWAP/pi-env.sh"
+	echo "  Removed $SWAP/pi-env.sh"
+	rm -f "$BIN/pi-env"
+	echo "  Removed $BIN/pi-env"
+
+	echo ""
+	echo "pi-env uninstalled. pi continues to use $SWAP/agent as normal."
+	echo "To clean up leftover environments, remove $SWAP/agent-* directories manually."
+}
+
 cmd_help() {
 	echo "pi-env v$VERSION — Multi pi environment manager"
 	echo ""
@@ -263,6 +298,7 @@ cmd_help() {
 	echo "  import <name> [file]           Import packages from file"
 	echo "  list                           List all environments"
 	echo "  status                         Show current status"
+	echo "  uninstall                      Remove pi-env and restore single-directory mode"
 	echo "  --version, -V                  Show version"
 	echo "  help                           Show this help"
 	echo ""
@@ -287,6 +323,7 @@ use) cmd_use "$@" ;;
 export) cmd_export "$@" ;;
 import) cmd_import "$@" ;;
 status | st) cmd_status "$@" ;;
+uninstall) cmd_uninstall "$@" ;;
 --version | -V) echo "pi-env v$VERSION" ;;
 -h | --help | help | *) cmd_help ;;
 esac
