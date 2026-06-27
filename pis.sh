@@ -66,7 +66,7 @@ cmd_list() {
 
 cmd_create() {
 	local name="$2"
-	[ -z "$name" ] && {
+	[ -z "$name" ] || [[ "$name" =~ ^- ]] && {
 		echo "Usage: pis create <name> [--clone <source>] [--use] [--import <file>] [--install-indicator | --no-indicator]"
 		exit 1
 	}
@@ -189,7 +189,7 @@ fs.renameSync(tmp, path);
 
 cmd_delete() {
 	local name="$2"
-	[ -z "$name" ] && {
+	[ -z "$name" ] || [[ "$name" =~ ^- ]] && {
 		echo "Usage: pis delete <name>"
 		exit 1
 	}
@@ -210,7 +210,7 @@ cmd_delete() {
 
 cmd_use() {
 	local name="$2"
-	[ -z "$name" ] && {
+	[ -z "$name" ] || [[ "$name" =~ ^- ]] && {
 		echo "Usage: pis use <name>"
 		exit 1
 	}
@@ -232,6 +232,11 @@ cmd_use() {
 
 cmd_export() {
 	local name="${2:-default}" outfile="${3:-pi-packages-${2:-default}.txt}" envdir
+
+	[[ "$name" =~ ^- ]] && {
+		echo "Usage: pis export [name] [file]"
+		exit 1
+	}
 
 	if [ "$name" = "current" ]; then
 		envdir=$(abs_path "$SWAP/agent" 2>/dev/null)
@@ -257,7 +262,7 @@ cmd_export() {
 
 cmd_import() {
 	local name="$2" infile="$3" envdir
-	[ -z "$name" ] && {
+	[ -z "$name" ] || [[ "$name" =~ ^- ]] && {
 		echo "Usage: pis import <name> [file]"
 		exit 1
 	}
