@@ -102,7 +102,7 @@ A pi extension that shows the currently active pi environment in the TUI status 
 ### Install
 
 ```bash
-pi install npm:@wjm/pis-indicator
+pi install github:Githubwujinming/pis-indicator
 ```
 
 After installation, reload pi (`/reload`) — the status bar will show `pi: <name>`.

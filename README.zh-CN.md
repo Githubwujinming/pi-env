@@ -100,7 +100,7 @@ pi install npm:web-tool
 ### 安装
 
 ```bash
-pi install npm:@wjm/pis-indicator
+pi install github:Githubwujinming/pis-indicator
 ```
 
 安装后重新加载 pi（`/reload`），状态栏将显示 `pi: <环境名称>`。
