@@ -467,7 +467,7 @@ cmd_packages() {
 			echo "  pis pkgs [env]                      List packages"
 			echo "  pis pkgs install <pkg> [env]        Install a package"
 			echo "  pis pkgs remove <pkg> [env]         Remove a package"
-			echo "  pis pkgs update [env]               Update packages"
+			echo "  pis pkgs update [env] [--yes|-y]         Update packages"
 			echo "  pis pkgs outdated [env|--all]       Show outdated packages"
 			exit 1
 		}
@@ -600,10 +600,64 @@ cmd_packages_remove() {
 	fi
 }
 
+# Check outdated packages and display an update plan for an environment
+# Usage: _pkgs_update_plan <envdir> <envname>
+# Returns: 0 if up-to-date, 1 if outdated packages found, 2 if error
+_pkgs_update_plan() {
+	local envdir="$1" envname="$2"
+
+	if [ ! -d "$envdir/npm" ]; then
+		echo "  Environment '$envname' has no npm directory"
+		return 2
+	fi
+
+	echo "  Checking outdated packages in '$envname' environment..."
+	if outdated_output=$(cd "$envdir/npm" && pnpm outdated 2>&1); then
+		echo "  All packages are up to date"
+		return 0
+	else
+		local rc=$?
+		if [ $rc -eq 2 ]; then
+			echo "  Error: pnpm outdated failed" >&2
+			echo "$outdated_output" >&2
+			return 2
+		fi
+		# pnpm outdated exit code 1: outdated packages found
+		echo "$outdated_output"
+		local count
+		count=$(echo "$outdated_output" | tail -n +2 | wc -l | tr -d ' ')
+		if [ "$count" -eq 0 ]; then
+			# Header-only output, no actual packages
+			return 0
+		fi
+		echo "  $count package(s) outdated."
+		return 1
+	fi
+}
+
 cmd_packages_update() {
-	local name="${3:-current}"
+	local name="" skip_confirm=0
+	local positional=()
+
+	# Parse args starting from position 3 (after command + subcommand)
+	for arg in "${@:3}"; do
+		case "$arg" in
+		--yes | -y) skip_confirm=1 ;;
+		--all) positional+=("$arg") ;;
+		-*)
+			echo "  Unknown option: $arg"
+			echo "Usage: pis pkgs update [env|--all] [--yes|-y]"
+			exit 1
+			;;
+		*) positional+=("$arg") ;;
+		esac
+	done
+
+	# First positional arg is the env name, default "current"
+	name="${positional[0]:-current}"
+
 	[ "$name" != "--all" ] && [[ "$name" =~ ^- ]] && {
-		echo "Usage: pis pkgs update [env|--all]"
+		echo "Usage: pis pkgs update [env|--all] [--yes|-y]"
 		exit 1
 	}
 
@@ -624,7 +678,7 @@ cmd_packages_update() {
 			# so pi update --extensions may not actually update npm packages.
 			# Run pnpm update directly to force actual updates within range.
 			if [ -d "$env_dir/npm" ]; then
-				(cd "$env_dir/npm" && pnpm update --config.minimumReleaseAge=0 2>&1) || true
+				(cd "$env_dir/npm" && pnpm update 2>&1) || true
 			fi
 		done
 		[ "$fail" -gt 0 ] && echo "  Warning: $fail/$total environment(s) failed"
@@ -639,6 +693,34 @@ cmd_packages_update() {
 		exit 1
 	}
 
+	if [ ! -d "$envdir/npm" ]; then
+		echo "  Environment '$name' has no npm directory"
+		exit 1
+	fi
+
+	# Show update plan and confirm (unless --yes/-y)
+	if [ "$skip_confirm" -eq 0 ]; then
+		local plan_rc=0
+		_pkgs_update_plan "$envdir" "$name" || plan_rc=$?
+		if [ $plan_rc -eq 2 ]; then
+			# pnpm outdated error — don't proceed
+			exit 1
+		fi
+		if [ $plan_rc -eq 1 ]; then
+			# Outdated packages found — ask for confirmation
+			local answer
+			read -r -p "Continue? [y/N] " answer
+			case "$answer" in
+			[Yy] | [Yy][Ee][Ss]) ;;
+			*)
+				echo "  Cancelled."
+				exit 0
+				;;
+			esac
+		fi
+		# plan_rc 0 = up to date, no confirmation needed, proceed
+	fi
+
 	echo "  Updating packages in $name..."
 	if PI_CODING_AGENT_DIR="$envdir" pi update --extensions 2>&1; then
 		echo "  → pi extensions updated"
@@ -649,13 +731,13 @@ cmd_packages_update() {
 	# so pi update --extensions may not actually update npm packages.
 	# Run pnpm update directly to force actual updates within range.
 	if [ -d "$envdir/npm" ]; then
-		cd "$envdir/npm" && pnpm update --config.minimumReleaseAge=0 2>&1
+		(cd "$envdir/npm" && pnpm update 2>&1) || true
 	fi
 	echo "  → $name packages updated"
 	echo "  Note: updates respect semver ranges (e.g. ^0.19.9 blocks 0.20.x)."
-	echo "  To check: cd $envdir/npm && npm outdated"
+	echo "  To check: cd $envdir/npm && pnpm outdated"
 	echo "  To force upgrade: cd $envdir/npm && pnpm install <pkg>@<version>"
-	echo "  (use the version from npm outdated's 'Latest' column)"
+	echo "  (use the version from pnpm outdated's 'Latest' column)"
 }
 
 cmd_packages_outdated() {
@@ -677,13 +759,13 @@ cmd_packages_outdated() {
 				echo "      (no npm directory)"
 				continue
 			fi
-			if outdated_output=$(cd "$env_dir/npm" && npm outdated 2>&1); then
+			if outdated_output=$(cd "$env_dir/npm" && pnpm outdated 2>&1); then
 				echo "      All packages are up to date"
 				succ=$((succ + 1))
 			else
 				local rc=$?
 				if [ $rc -eq 2 ]; then
-					echo "      Error: npm outdated failed" >&2
+					echo "      Error: pnpm outdated failed" >&2
 					fail=$((fail + 1))
 				else
 					echo "$outdated_output" | sed 's/^/      /'
@@ -710,12 +792,12 @@ cmd_packages_outdated() {
 	fi
 
 	echo "Outdated packages in '$name' environment:"
-	if outdated_output=$(cd "$envdir/npm" && npm outdated 2>&1); then
+	if outdated_output=$(cd "$envdir/npm" && pnpm outdated 2>&1); then
 		echo "  All packages are up to date"
 	else
 		local rc=$?
 		if [ $rc -eq 2 ]; then
-			echo "  Error: npm outdated failed" >&2
+			echo "  Error: pnpm outdated failed" >&2
 			exit 1
 		fi
 		echo "$outdated_output"
@@ -927,7 +1009,7 @@ cmd_help() {
 	echo "  packages [name]                List installed packages in an environment"
 	echo "  pkgs install <pkg> [env]       Install a package (omit env for current, --all for all)"
 	echo "  pkgs remove <pkg> [env]        Remove a package (omit env for current, --all for all)"
-	echo "  pkgs update [env]              Update all packages (omit env for current, --all for all)"
+	echo "  pkgs update [env] [--yes|-y]    Update packages with update plan (omit env for current, --all for all)"
 	echo "  pkgs outdated [env]            Show outdated packages in an environment (omit env for current, --all for all)"
 	echo "  tools list                     List installed tools"
 	echo "  tools install <name> --url <URL>  Install a tool from URL"
